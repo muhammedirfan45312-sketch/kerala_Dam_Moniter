@@ -402,10 +402,18 @@ function startClock() {
     if (!el) return;
     const tick = () => {
         const now = new Date();
-        el.innerText = `Last updated: ${now.toLocaleDateString('en-IN', {weekday:'short',year:'numeric',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})}`;
+        el.innerText = `Last updated: ${now.toLocaleDateString('en-IN', {
+            weekday: 'short', 
+            year: 'numeric', 
+            month: 'short', 
+            day: 'numeric', 
+            hour: '2-digit', 
+            minute: '2-digit', 
+            second: '2-digit'
+        })}`;
     };
     tick();
-    setInterval(tick, 60000);
+    setInterval(tick, 1000);
 }
 
 // ── TRENDS CHART ──────────────────────────────────────
