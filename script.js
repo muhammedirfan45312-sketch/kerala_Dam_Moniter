@@ -420,6 +420,11 @@ window.selectDam = function(damName) {
         else                            { warnBox.style.backgroundColor='rgba(16,185,129,0.1)'; warnBox.style.color='#6ee7b7'; warnBox.style.fontWeight=''; }
     }
 
+    // Weather update for specific dam
+    if (dam.latitude && dam.longitude) {
+        fetchWeather(dam.latitude, dam.longitude);
+    }
+
     updateTrends(damName, currentScenario);
 };
 
@@ -533,7 +538,7 @@ async function fetchLiveData() {
                 const cl  = parseFloat(idukki.data[0].waterLevel);
                 const fl  = parseFloat(idukki.FRL);
                 if (!isNaN(cl) && !isNaN(fl) && fl > 0) {
-                    const pct = parseFloat(idukki.data[0].storagePercentage) || Math.round((cl/fl)*100);
+                    const pct = parseFloat(idukki.data[0].storagePercentage) || Math.round((cl/fl) * 100);
                     const gaugeValEl = document.querySelector('.gauge-value');
                     if (gaugeValEl) gaugeValEl.innerText = `${pct}%`;
                     const gaugeLbEl  = document.querySelector('.gauge-label div:first-child');
@@ -547,28 +552,45 @@ async function fetchLiveData() {
                     const compFill = document.getElementById('comparison-fill');
                     if (compFill) compFill.style.width = `${pct}%`;
 
+                    // Initial weather fetch for default dam (Idukki)
+                    if (idukki.latitude && idukki.longitude) {
+                        fetchWeather(idukki.latitude, idukki.longitude);
+                    }
                     usedLiveLevel = true;
                 }
             }
         }
     } catch(e) { console.warn('Dam data fetch failed, using fallback.', e); }
 
+    if (!usedLiveLevel) {
+        setScenario('orange'); 
+        fetchWeather(9.85, 77.1); // Fallback Idukki coordinates
+    }
+}
+
+async function fetchWeather(lat, lon) {
+    const alertTitle = document.querySelector('.alert-text h3');
+    if (alertTitle) alertTitle.innerHTML = '<span class="loading-dots">UPDATING WEATHER</span>';
+
     try {
-        const rainRes = await fetch('https://api.open-meteo.com/v1/forecast?latitude=9.85&longitude=77.1&daily=precipitation_sum&forecast_days=1');
+        const rainRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=precipitation_sum&current_weather=true&timezone=auto&forecast_days=1`);
         if (rainRes.ok) {
             const rainData = await rainRes.json();
             const precip = rainData?.daily?.precipitation_sum?.[0];
+            const currentTemp = rainData?.current_weather?.temperature;
+            
             if (precip !== undefined) {
-                const type = precip>115?'red':precip>64?'orange':precip>6.4?'yellow':'green';
-                updateAlertCard(type, precip);
+                const type = precip > 115 ? 'red' : precip > 64 ? 'orange' : precip > 6.4 ? 'yellow' : 'green';
+                updateAlertCard(type, precip, currentTemp);
             }
         }
-    } catch(e) { console.warn('Rain forecast fetch failed.', e); }
-
-    if (!usedLiveLevel) setScenario('orange');
+    } catch(e) { 
+        console.warn('Weather fetch failed.', e);
+        if (alertTitle) alertTitle.innerText = 'WEATHER OFFLINE';
+    }
 }
 
-function updateAlertCard(type, precip) {
+function updateAlertCard(type, precip, temp) {
     const alertCard  = document.querySelector('.alert-card');
     const alertIcon  = document.querySelector('.alert-icon');
     const alertTitle = document.querySelector('.alert-text h3');
@@ -576,17 +598,17 @@ function updateAlertCard(type, precip) {
     if (!alertCard || !alertIcon || !alertTitle || !alertDesc) return;
 
     const cfg = {
-        red:    {color:'var(--accent-red)',   bg:'rgba(239,68,68,0.15)',  iconBg:'rgba(239,68,68,0.3)',  title:'RED ALERT',    desc:`Extreme Rainfall: ${precip}mm forecast next 24hrs.`},
-        orange: {color:'var(--accent-orange)',bg:'rgba(249,115,22,0.08)', iconBg:'rgba(249,115,22,0.2)', title:'ORANGE ALERT', desc:`Heavy Rainfall: ${precip}mm forecast next 24hrs.`},
-        yellow: {color:'#eab308',             bg:'rgba(234,179,8,0.08)',  iconBg:'rgba(234,179,8,0.2)',  title:'YELLOW ALERT', desc:`Moderate Rainfall: ${precip}mm forecast next 24hrs.`},
-        green:  {color:'var(--accent-green)', bg:'rgba(16,185,129,0.08)', iconBg:'rgba(16,185,129,0.2)',title:'NORMAL',       desc:`Light/No Rainfall: ${precip}mm forecast next 24hrs.`}
+        red:    {color:'var(--accent-red)',   bg:'rgba(239,68,68,0.15)',  iconBg:'rgba(239,68,68,0.3)',  title:'RED ALERT',    desc:`Extreme Rainfall: ${precip}mm forecast. Local Temp: ${temp || '--'}°C.`},
+        orange: {color:'var(--accent-orange)',bg:'rgba(249,115,22,0.08)', iconBg:'rgba(249,115,22,0.2)', title:'ORANGE ALERT', desc:`Heavy Rainfall: ${precip}mm forecast. Local Temp: ${temp || '--'}°C.`},
+        yellow: {color:'#eab308',             bg:'rgba(234,179,8,0.08)',  iconBg:'rgba(234,179,8,0.2)',  title:'YELLOW ALERT', desc:`Moderate Rainfall: ${precip}mm. Local Temp: ${temp || '--'}°C.`},
+        green:  {color:'var(--accent-green)', bg:'rgba(16,185,129,0.08)', iconBg:'rgba(16,185,129,0.2)',title:'SAFE',         desc:`Light/No Rainfall: ${precip}mm. Local Temp: ${temp || '--'}°C.`}
     };
     const c = cfg[type] || cfg.green;
     alertCard.style.borderColor        = c.color;
     alertCard.style.background         = `linear-gradient(135deg,${c.bg} 0%,var(--card-bg) 100%)`;
     alertIcon.style.color              = c.color;
     alertIcon.style.backgroundColor    = c.iconBg;
-    alertTitle.innerText               = c.title;
+    alertTitle.innerHTML               = `<span class="live-blink" style="display:inline-block; width:8px; height:8px; background:${c.color}; border-radius:50%; margin-right:8px;"></span>${c.title}`;
     alertTitle.style.color             = c.color;
     alertDesc.innerText                = c.desc;
 }

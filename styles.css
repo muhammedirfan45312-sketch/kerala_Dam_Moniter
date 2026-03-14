@@ -909,3 +909,51 @@ main {
   .gauge-value { font-size: 2rem; }
   .enter-btn { padding: 1rem 2rem; font-size: 0.95rem; }
 }
+
+/* ── WEATHER ENHANCEMENTS ── */
+.live-blink {
+  animation: liveBlink 1.5s infinite;
+  box-shadow: 0 0 10px currentColor;
+}
+
+@keyframes liveBlink {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.8); }
+}
+
+.loading-dots::after {
+  content: '.';
+  animation: dots 1.5s steps(5, end) infinite;
+}
+
+@keyframes dots {
+  0% { content: '.'; }
+  33% { content: '..'; }
+  66% { content: '...'; }
+}
+
+/* ── BACK TO TOP BUTTON ── */
+#back-to-top {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  width: 44px;
+  height: 44px;
+  background: var(--accent-blue);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 1000;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+  transition: all var(--transition-fast);
+}
+
+#back-to-top:hover {
+  background: var(--accent-blue-lt);
+  transform: translateY(-4px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+}
