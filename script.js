@@ -636,22 +636,32 @@ function initMap() {
                 attribution: '&copy; OpenStreetMap &copy; CARTO', subdomains: 'abcd', maxZoom: 12
             }).addTo(keralMap);
             
-            if (window.allDamsData && window.allDamsData.length > 0) {
+            if (window.pendingMapMarkersData) {
+                updateMapMarkers(window.pendingMapMarkersData);
+                window.pendingMapMarkersData = null;
+            } else if (window.allDamsData && window.allDamsData.length > 0) {
                 updateMapMarkers(window.allDamsData);
             }
             observer.unobserve(mapEl);
         }
     }, { threshold: 0.1 });
 
+
     observer.observe(mapEl);
 }
 
 function updateMapMarkers(damsList) {
-    if (!keralMap) initMap();
+    if (!keralMap) {
+        window.pendingMapMarkersData = damsList;
+        initMap();
+        return;
+    }
+    
     mapMarkers.forEach(m => keralMap.removeLayer(m));
     mapMarkers = [];
 
     damsList.forEach(d => {
+
         if (!d.latitude || !d.longitude || !d.data || d.data.length === 0) return;
         const cl  = parseFloat(d.data[0].waterLevel);
         const fl  = parseFloat(d.FRL);
@@ -776,11 +786,26 @@ async function fetchLiveData() {
         setScenario('orange'); 
         fetchWeather(9.85, 77.1); // Fallback Idukki coordinates
         
-        // Show fallback values for the summary bar if the API is completely down
-        ['sum-total','sum-critical','sum-warning','sum-safe'].forEach((id, i) => {
-            const el = document.getElementById(id);
-            if (el) el.innerText = ['1', '0', '1', '0'][i]; // Base simulated display
+        // Generate simulated fallback data
+        const fallbackDams = Object.keys(damDescriptions).map((name, i) => {
+            // Seed a deterministic pseudo-random level between 40 and 100 based on the index length
+            const pseudoRandom = ((name.length * (i + 1) * 7) % 60) + 40; 
+            return {
+                name: name,
+                latitude: 9.85 + (i * 0.05) % 2,
+                longitude: 77.1 + (i * 0.05) % 2,
+                FRL: "100", 
+                data: [{
+                    waterLevel: pseudoRandom.toString(),
+                    storagePercentage: pseudoRandom.toString(),
+                    inflow: Math.floor(pseudoRandom * 2).toString(),
+                    outflow: (pseudoRandom > 80 ? Math.floor(pseudoRandom) : 0).toString()
+                }]
+            };
         });
+
+        window.allDamsData = fallbackDams;
+        renderAllDamsGrid(fallbackDams);
     }
 }
 
@@ -869,14 +894,20 @@ function renderAllDamsGrid(damsList) {
 
     allParsedDams = parsedDams;
     renderDamsToGrid(parsedDams);
+    
+    // Ensure summary bar is explicitly updated 
+    const sumTotal = document.getElementById('sum-total');
+    const sumCrit  = document.getElementById('sum-critical');
+    const sumWarn  = document.getElementById('sum-warning');
+    const sumSafe  = document.getElementById('sum-safe');
+
+    if (sumTotal) sumTotal.innerText = metrics.total;
+    if (sumCrit)  sumCrit.innerText  = metrics.critical;
+    if (sumWarn)  sumWarn.innerText  = metrics.warning;
+    if (sumSafe)  sumSafe.innerText  = metrics.safe;
+
     initMap();
     updateMapMarkers(damsList);
-
-    // FIX: safe null checks on summary bar
-    ['sum-total','sum-critical','sum-warning','sum-safe'].forEach((id, i) => {
-        const el = document.getElementById(id);
-        if (el) el.innerText = Object.values(metrics)[i];
-    });
 }
 
 // ── OPTIMIZATION: FRAGMENT RENDERING ──────────────────
