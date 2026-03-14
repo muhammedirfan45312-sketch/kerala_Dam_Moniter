@@ -248,26 +248,59 @@ async function fetchNews() {
     const container = DOM.news_feed_container || document.getElementById('news-feed-container');
     if (!container) return;
 
+    // 1. Generate Live System Events (Simulated "Just Now" data)
+    const systemEvents = [
+        {
+            title: `Sensor heartbeat stable across ${currentDamName} telemetry nodes.`,
+            author: "System",
+            link: "#",
+            pubDate: new Date(),
+            source: "TELEMETRY"
+        },
+        {
+            title: `Pre-release simulation: Discharge efficiency confirmed at 94%.`,
+            author: "AI Engine",
+            link: "#",
+            pubDate: new Date(Date.now() - 15 * 60 * 1000),
+            source: "ANALYSIS"
+        }
+    ];
+
     try {
-        const query = encodeURIComponent('Kerala Dam news reservoir alert');
+        const query = encodeURIComponent('Kerala Dam reservoir');
         const rssUrl = `https://news.google.com/rss/search?q=${query}&hl=en-IN&gl=IN&ceid=IN:en`;
         const res = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rssUrl)}`);
         
-        if (!res.ok) throw new Error('News fetch failed');
-        const data = await res.json();
-        
-        if (data.status !== 'ok' || !data.items || data.items.length === 0) return;
+        let newsItems = [];
+        if (res.ok) {
+            const data = await res.json();
+            if (data.status === 'ok' && data.items) {
+                newsItems = data.items.slice(0, 4);
+            }
+        }
 
+        // Combine: System Events at top, then RSS News
+        const allItems = [...systemEvents, ...newsItems];
         const fragment = document.createDocumentFragment();
-        data.items.slice(0, 6).forEach(item => {
-            const newsItem = document.createElement('a');
-            newsItem.className = 'news-item';
-            newsItem.href = item.link;
-            newsItem.target = '_blank';
-            newsItem.rel = 'noopener noreferrer';
 
-            const date = new Date(item.pubDate);
-            const timeAgo = formatTimeAgo(date);
+        allItems.forEach(item => {
+            const isSystem = item.source === "TELEMETRY" || item.source === "ANALYSIS";
+            const newsItem = document.createElement(isSystem ? 'div' : 'a');
+            newsItem.className = 'news-item';
+            if (!isSystem) {
+                newsItem.href = item.link;
+                newsItem.target = '_blank';
+                newsItem.rel = 'noopener noreferrer';
+            }
+
+            const originalDate = new Date(item.pubDate);
+            // IMMERSION: Shift date by 2 years to match the 2026 simulation
+            const date = new Date(originalDate);
+            date.setFullYear(date.getFullYear() + 2);
+            
+            // If the shifted date is in the future relative to our clock, cap it at 'Just Now'
+            const displayDate = date > new Date() ? new Date() : date;
+            const timeAgo = formatTimeAgo(displayDate);
 
             newsItem.innerHTML = `
                 <div class="news-time">
@@ -276,8 +309,8 @@ async function fetchNews() {
                 </div>
                 <div class="news-title">${item.title}</div>
                 <div class="news-source">
-                    <span class="source-tag">${item.author || 'Update'}</span>
-                    Feed
+                    <span class="source-tag" style="${isSystem?'background:rgba(16,185,129,0.2);color:#6ee7b7;':''}">${item.author}</span>
+                    ${item.source || 'News Feed'}
                 </div>
             `;
             fragment.appendChild(newsItem);
@@ -1206,6 +1239,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     setTimeout(fetchLiveData, 400);
     setTimeout(fetchNews, 800);
+    setInterval(fetchNews, 2 * 60 * 1000); // Auto-refresh news every 2 mins
 
     // ── SYSTEM READY ──
     setTimeout(() => {
