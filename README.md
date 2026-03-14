@@ -1,6 +1,6 @@
 # 🌊 DamGuard Kerala: AI-Driven Reservoir Telemetry & Flood Early Warning System
 
-**Live Deployment:** [https://dam-guard-kerala.vercel.app](https://dam-guard-kerala.vercel.app)
+**Live Deployment:** [https://kerala-dam-moniter.vercel.app](https://kerala-dam-moniter.vercel.app)
 
 DamGuard Kerala is a high-precision, premium dashboard designed for real-time reservoir monitoring and autonomous flood risk mitigation. Built in response to the critical need for advanced early warning systems, it integrates live telemetry, AI-driven decision support, and multi-agency alert simulation.
 
