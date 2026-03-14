@@ -518,10 +518,17 @@ main {
 .news-item {
   padding: 0.875rem 0;
   border-bottom: 1px solid rgba(30,58,95,0.25);
-  transition: background var(--transition-fast), padding var(--transition-fast);
+  transition: all var(--transition-fast);
   border-radius: 6px;
+  text-decoration: none;
+  display: block;
+  color: inherit;
 }
-.news-item:hover { background: rgba(59,130,246,0.04); padding: 0.875rem 0.5rem; }
+.news-item:hover { 
+  background: rgba(59,130,246,0.06); 
+  padding: 0.875rem 0.75rem;
+  transform: translateX(4px);
+}
 .news-item:last-child { border-bottom: none; }
 
 .news-time { font-size: 0.72rem; color: var(--accent-blue-lt); font-weight: 600; display: flex; align-items: center; gap: 0.35rem; margin-bottom: 0.3rem; font-family: var(--font-mono); }
