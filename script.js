@@ -27,7 +27,8 @@ function cacheDOM() {
         'confidence-val', 'comparison-text', 'comparison-fill', 'comparison-desc',
         'alert-chips-container', 'warning-box-malayalam', 'all-dams-container',
         'dam-detail-view', 'all-dams-view', 'back-home-btn', 'scenario-container',
-        'mixed-layout-section', 'idukki-intelligence-section', 'dam-search'
+        'mixed-layout-section', 'idukki-intelligence-section', 'dam-search',
+        'news-feed-container'
     ];
     ids.forEach(id => DOM[id] = document.getElementById(id));
     DOM.gaugeValue = document.querySelector('.gauge-value');
@@ -241,6 +242,68 @@ const damDescriptions = {
     "Anayirankal":   "Earth dam primarily used for hydroelectric power and water conservation in Idukki.",
     "Kallar":        "Small check dam located in the Idukki district."
 };
+
+// ── DYNAMIC NEWS FEED ────────────────────────────────
+async function fetchNews() {
+    const container = DOM.news_feed_container || document.getElementById('news-feed-container');
+    if (!container) return;
+
+    try {
+        const query = encodeURIComponent('Kerala Dam news reservoir alert');
+        const rssUrl = `https://news.google.com/rss/search?q=${query}&hl=en-IN&gl=IN&ceid=IN:en`;
+        const res = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rssUrl)}`);
+        
+        if (!res.ok) throw new Error('News fetch failed');
+        const data = await res.json();
+        
+        if (data.status !== 'ok' || !data.items || data.items.length === 0) return;
+
+        const fragment = document.createDocumentFragment();
+        data.items.slice(0, 6).forEach(item => {
+            const newsItem = document.createElement('a');
+            newsItem.className = 'news-item';
+            newsItem.href = item.link;
+            newsItem.target = '_blank';
+            newsItem.rel = 'noopener noreferrer';
+
+            const date = new Date(item.pubDate);
+            const timeAgo = formatTimeAgo(date);
+
+            newsItem.innerHTML = `
+                <div class="news-time">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                    ${timeAgo}
+                </div>
+                <div class="news-title">${item.title}</div>
+                <div class="news-source">
+                    <span class="source-tag">${item.author || 'Update'}</span>
+                    Feed
+                </div>
+            `;
+            fragment.appendChild(newsItem);
+        });
+
+        container.innerHTML = '';
+        container.appendChild(fragment);
+    } catch (e) {
+        console.error('News Feed Error:', e);
+    }
+}
+
+function formatTimeAgo(date) {
+    const seconds = Math.floor((new Date() - date) / 1000);
+    let interval = seconds / 31536000;
+    if (interval > 1) return Math.floor(interval) + " years ago";
+    interval = seconds / 2592000;
+    if (interval > 1) return Math.floor(interval) + " months ago";
+    interval = seconds / 86400;
+    if (interval > 1) return Math.floor(interval) + " days ago";
+    interval = seconds / 3600;
+    if (interval > 1) return Math.floor(interval) + " hours ago";
+    interval = seconds / 60;
+    if (interval > 1) return Math.floor(interval) + " minutes ago";
+    return Math.floor(seconds) + " seconds ago";
+}
 
 // ── DISTRICT MAP ─────────────────────────────────────
 const districtMap = {
@@ -1142,6 +1205,7 @@ document.addEventListener('DOMContentLoaded', () => {
     updateTrends('Idukki', 'orange');
 
     setTimeout(fetchLiveData, 400);
+    setTimeout(fetchNews, 800);
 
     // ── SYSTEM READY ──
     setTimeout(() => {
