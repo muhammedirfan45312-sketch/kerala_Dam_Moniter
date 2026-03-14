@@ -785,27 +785,6 @@ async function fetchLiveData() {
     if (!usedLiveLevel) {
         setScenario('orange'); 
         fetchWeather(9.85, 77.1); // Fallback Idukki coordinates
-        
-        // Generate simulated fallback data
-        const fallbackDams = Object.keys(damDescriptions).map((name, i) => {
-            // Seed a deterministic pseudo-random level between 40 and 100 based on the index length
-            const pseudoRandom = ((name.length * (i + 1) * 7) % 60) + 40; 
-            return {
-                name: name,
-                latitude: 9.85 + (i * 0.05) % 2,
-                longitude: 77.1 + (i * 0.05) % 2,
-                FRL: "100", 
-                data: [{
-                    waterLevel: pseudoRandom.toString(),
-                    storagePercentage: pseudoRandom.toString(),
-                    inflow: Math.floor(pseudoRandom * 2).toString(),
-                    outflow: (pseudoRandom > 80 ? Math.floor(pseudoRandom) : 0).toString()
-                }]
-            };
-        });
-
-        window.allDamsData = fallbackDams;
-        renderAllDamsGrid(fallbackDams);
     }
 }
 
