@@ -652,9 +652,11 @@ function updateMapMarkers(damsList) {
     mapMarkers = [];
 
     damsList.forEach(d => {
-        if (!d.latitude || !d.longitude) return;
+        if (!d.latitude || !d.longitude || !d.data || d.data.length === 0) return;
         const cl  = parseFloat(d.data[0].waterLevel);
         const fl  = parseFloat(d.FRL);
+        if (isNaN(cl) || isNaN(fl) || fl <= 0) return;
+
         const pct = parseFloat(d.data[0].storagePercentage) || Math.round((cl/fl)*100);
 
         const color       = pct>=90?'#ef4444':pct>=70?'#f97316':'#10b981';
@@ -766,11 +768,19 @@ async function fetchLiveData() {
                 }
             }
         }
-    } catch(e) { console.warn('Dam data fetch failed, using fallback.', e); }
+    } catch(e) { 
+        console.warn('Dam data fetch failed, using fallback.', e); 
+    }
 
     if (!usedLiveLevel) {
         setScenario('orange'); 
         fetchWeather(9.85, 77.1); // Fallback Idukki coordinates
+        
+        // Show fallback values for the summary bar if the API is completely down
+        ['sum-total','sum-critical','sum-warning','sum-safe'].forEach((id, i) => {
+            const el = document.getElementById(id);
+            if (el) el.innerText = ['1', '0', '1', '0'][i]; // Base simulated display
+        });
     }
 }
 
