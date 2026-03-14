@@ -39,6 +39,9 @@
   --font-main:  'Space Grotesk', sans-serif;
   --font-mono:  'JetBrains Mono', monospace;
   --font-ml:    'Noto Sans Malayalam', sans-serif;
+
+  --skeleton-bg: rgba(255, 255, 255, 0.03);
+  --skeleton-highlight: rgba(255, 255, 255, 0.08);
 }
 
 /* ── RESET & BASE ── */
@@ -979,3 +982,63 @@ main {
 .lang-btn.active { color: var(--accent-blue-lt); text-shadow: 0 0 10px rgba(59,130,246,0.3); }
 .lang-btn:hover:not(.active) { color: var(--text-primary); }
 .lang-divider { opacity: 0.2; font-weight: 300; }
+/* ═══════════════════════════════
+   SKELETON LOADERS
+   ═══════════════════════════════ */
+.skeleton {
+  background: var(--skeleton-bg);
+  background: linear-gradient(90deg, var(--skeleton-bg) 25%, var(--skeleton-highlight) 50%, var(--skeleton-bg) 75%);
+  background-size: 200% 100%;
+  animation: skeletonPulse 1.5s infinite;
+  border-radius: 4px;
+}
+
+@keyframes skeletonPulse {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.news-item-skeleton {
+  height: 80px;
+  margin-bottom: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+}
+
+.dam-card-skeleton {
+  height: 180px;
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-xl);
+}
+
+/* ═══════════════════════════════
+   UX POLISH
+   ═══════════════════════════════ */
+html {
+  scroll-behavior: smooth;
+}
+
+button:focus-visible, a:focus-visible {
+  outline: 2px solid var(--accent-blue);
+  outline-offset: 2px;
+}
+
+.dam-card {
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+.dam-card:hover {
+  transform: translateY(-8px) scale(1.02);
+  border-color: rgba(59, 130, 246, 0.4);
+  box-shadow: 0 12px 30px -10px rgba(0, 0, 0, 0.5), 0 0 15px rgba(59, 130, 246, 0.1);
+}
+
+.news-item {
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.news-item:hover {
+  background: rgba(255, 255, 255, 0.04);
+  transform: translateX(4px);
+}

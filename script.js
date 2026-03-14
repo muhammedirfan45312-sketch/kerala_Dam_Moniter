@@ -621,15 +621,29 @@ window.selectDam = function(damName) {
 // ── MAP ───────────────────────────────────────────────
 function initMap() {
     if (keralMap) return;
-    const keralaBounds = L.latLngBounds(L.latLng(8.0,74.8), L.latLng(12.8,77.6));
-    keralMap = L.map('kerala-map', {
-        center:[10.3,76.5], zoom:7, minZoom:7, maxZoom:12,
-        maxBounds:keralaBounds, maxBoundsViscosity:1.0,
-        zoomControl:true, scrollWheelZoom:true
-    });
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-        attribution:'&copy; OpenStreetMap &copy; CARTO', subdomains:'abcd', maxZoom:12
-    }).addTo(keralMap);
+    const mapEl = document.getElementById('kerala-map');
+    if (!mapEl) return;
+
+    const observer = new IntersectionObserver((entries) => {
+        if (entries[0].isIntersecting) {
+            const keralaBounds = L.latLngBounds(L.latLng(8.0, 74.8), L.latLng(12.8, 77.6));
+            keralMap = L.map('kerala-map', {
+                center: [10.3, 76.5], zoom: 7, minZoom: 7, maxZoom: 12,
+                maxBounds: keralaBounds, maxBoundsViscosity: 1.0,
+                zoomControl: true, scrollWheelZoom: true
+            });
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                attribution: '&copy; OpenStreetMap &copy; CARTO', subdomains: 'abcd', maxZoom: 12
+            }).addTo(keralMap);
+            
+            if (window.allDamsData && window.allDamsData.length > 0) {
+                updateMapMarkers(window.allDamsData);
+            }
+            observer.unobserve(mapEl);
+        }
+    }, { threshold: 0.1 });
+
+    observer.observe(mapEl);
 }
 
 function updateMapMarkers(damsList) {
@@ -694,8 +708,10 @@ function goHome() {
         if (titleEl) titleEl.innerText = 'Idukki Reservoir';
         const descEl  = document.getElementById('main-dam-desc');
         if (descEl)  descEl.innerText  = 'Dam Release Decision Support & Early Warning System. One of the highest arch dams in Asia.';
-        const gaugeValEl = document.querySelector('.gauge-value');
-        if (gaugeValEl) gaugeValEl.innerText = `${pct.toFixed(1)}%`;
+        if (gaugeValEl) {
+            gaugeValEl.innerText = `${pct.toFixed(1)}%`;
+            gaugeValEl.title = `Current storage level for ${dam.name} Reservoir relative to its Full Reservoir Level.`;
+        }
         const clEl = document.getElementById('main-dam-level-cl');
         if (clEl) clEl.innerText = `${cl.toFixed(2)} ft`;
         const flEl = document.getElementById('main-dam-level-fl');
@@ -1230,6 +1246,13 @@ function initSearch() {
 // ── UTILITY ───────────────────────────────────────────
 const delay = ms => new Promise(r => setTimeout(r, ms));
 
+window.refreshData = async function() {
+    const btn = document.getElementById('refresh-btn');
+    if (btn) btn.style.transform = 'rotate(360deg)';
+    await Promise.all([fetchLiveData(), fetchNews()]);
+    setTimeout(() => { if (btn) btn.style.transform = 'rotate(0deg)'; }, 600);
+}
+
 // ── INIT ──────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
     cacheDOM();
@@ -1237,6 +1260,7 @@ document.addEventListener('DOMContentLoaded', () => {
     startClock();
     initBackToTop();
     initSearch();
+    initMap();
 
     // Init gauge with empty state then animate in
     setGauge(0);
@@ -1248,6 +1272,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(fetchLiveData, 400);
     setTimeout(fetchNews, 800);
     setInterval(fetchNews, 2 * 60 * 1000); // Auto-refresh news every 2 mins
+    setInterval(fetchLiveData, 5 * 60 * 1000); // Auto-refresh data every 5 mins
 
     // ── SYSTEM READY ──
     setTimeout(() => {
