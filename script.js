@@ -12,9 +12,35 @@ let trendsChartInstance = null;
 let currentDamName     = "Idukki";
 let currentScenario    = "orange";
 let currentScenarioType = "orange";
-let keralMap           = null;
+const keralMap           = null;
 let mapMarkers         = [];
 let allParsedDams      = [];
+
+// ── OPTIMIZATION: DOM CACHE ─────────────────────────
+const DOM = {};
+function cacheDOM() {
+    const ids = [
+        'main-dam-title', 'main-dam-desc', 'main-dam-inflow', 'main-dam-outflow',
+        'main-dam-level-cl', 'main-dam-level-fl', 'ai-context-text-classic',
+        'ai-rec-text-classic', 'warning-malayalam-classic', 'risk-list-classic',
+        'engine-status-badge', 'ai-rec-text', 'release-loc-block', 'time-overflow-val',
+        'confidence-val', 'comparison-text', 'comparison-fill', 'comparison-desc',
+        'alert-chips-container', 'warning-box-malayalam', 'all-dams-container',
+        'dam-detail-view', 'all-dams-view', 'back-home-btn', 'scenario-container',
+        'mixed-layout-section', 'idukki-intelligence-section', 'dam-search'
+    ];
+    ids.forEach(id => DOM[id] = document.getElementById(id));
+    DOM.gaugeValue = document.querySelector('.gauge-value');
+    DOM.gaugePath = document.querySelector('.gauge-path');
+    DOM.alertCard = document.querySelector('.alert-card');
+    DOM.alertIcon = document.querySelector('.alert-icon');
+    DOM.alertTitle = document.querySelector('.alert-text h3');
+    DOM.alertDesc = document.querySelector('.alert-text .stat-label');
+}
+
+// ── OPTIMIZATION: WEATHER CACHE ──────────────────────
+const weatherCache = {};
+const WEATHER_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
 const radius       = 110;
 const circumference = Math.PI * radius; // ~345.58
@@ -274,12 +300,8 @@ window.allDamsData = [];
 window.selectDam = function(damName) {
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
-    // FIX: show detail view, ensure it is visible
-    const detailView = document.getElementById('dam-detail-view');
-    if (detailView) { detailView.style.display = 'block'; detailView.style.opacity = '1'; }
-
-    const backBtn = document.getElementById('back-home-btn');
-    if (backBtn) backBtn.style.display = 'flex';
+    if (DOM.dam_detail_view) { DOM.dam_detail_view.style.display = 'block'; DOM.dam_detail_view.style.opacity = '1'; }
+    if (DOM.back_home_btn) DOM.back_home_btn.style.display = 'flex';
 
     const dam = window.allDamsData.find(d => d.name === damName);
     if (!dam || !dam.data || dam.data.length === 0) return;
@@ -290,26 +312,17 @@ window.selectDam = function(damName) {
     const inflow = parseFloat(dam.data[0].inflow) || 0;
     const district = districtMap[damName] || 'Idukki';
 
-    // Header
-    const titleEl = document.getElementById('main-dam-title');
-    if (titleEl) titleEl.innerText = `${dam.name} Reservoir`;
-    const descEl  = document.getElementById('main-dam-desc');
-    if (descEl)  descEl.innerText  = damDescriptions[dam.name] || `Early warning & telemetry system for ${damName}.`;
+    if (DOM.main_dam_title) DOM.main_dam_title.innerText = `${dam.name} Reservoir`;
+    if (DOM.main_dam_desc)  DOM.main_dam_desc.innerText  = damDescriptions[dam.name] || `Early warning & telemetry system for ${damName}.`;
 
-    // Gauge
-    const gaugeVal = document.querySelector('.gauge-value');
-    if (gaugeVal) gaugeVal.innerText = `${pct.toFixed(1)}%`;
-    const clEl = document.getElementById('main-dam-level-cl');
-    if (clEl) clEl.innerText = `${cl.toFixed(2)} ft`;
-    const flEl = document.getElementById('main-dam-level-fl');
-    if (flEl) flEl.innerText = `Full Reservoir Level: ${fl.toFixed(2)} ft`;
+    if (DOM.gaugeValue) DOM.gaugeValue.innerText = `${pct.toFixed(1)}%`;
+    if (DOM.main_dam_level_cl) DOM.main_dam_level_cl.innerText = `${cl.toFixed(2)} ft`;
+    if (DOM.main_dam_level_fl) DOM.main_dam_level_fl.innerText = `Full Reservoir Level: ${fl.toFixed(2)} ft`;
     setGauge(pct);
 
     // Flow
-    const inflowEl  = document.getElementById('main-dam-inflow');
-    const outflowEl = document.getElementById('main-dam-outflow');
-    if (inflowEl)  inflowEl.innerHTML  = `${dam.data[0].inflow || 0} <span style="font-size:1.125rem;color:var(--text-secondary);font-weight:normal;">cumecs</span>`;
-    if (outflowEl) outflowEl.innerHTML = `${dam.data[0].totalOutflow || dam.data[0].outflow || 0} <span style="font-size:1.125rem;color:var(--text-secondary);font-weight:normal;">cumecs</span>`;
+    if (DOM.main_dam_inflow)  DOM.main_dam_inflow.innerHTML  = `${dam.data[0].inflow || 0} <span style="font-size:1.125rem;color:var(--text-secondary);font-weight:normal;">cumecs</span>`;
+    if (DOM.main_dam_outflow) DOM.main_dam_outflow.innerHTML = `${dam.data[0].totalOutflow || dam.data[0].outflow || 0} <span style="font-size:1.125rem;color:var(--text-secondary);font-weight:normal;">cumecs</span>`;
 
     // Risk classification
     const intel = getIntelForDam(damName, district);
@@ -346,47 +359,34 @@ window.selectDam = function(damName) {
     const chipEmoji = riskLevel==='CRITICAL' ? '⚫' : riskLevel==='HIGH' ? '🔴' : '🟢';
     const chipsHTML = intel.alertZones.map(z => `<div class="chip">${z} <span style="font-size:1.1rem;">${chipEmoji}</span></div>`).join('');
 
-    // Show/hide scenario buttons (only for Idukki)
-    const scBtn = document.getElementById('scenario-container');
-    if (scBtn) scBtn.style.display = damName.toLowerCase().includes('idukki') ? 'flex' : 'none';
+    if (DOM.scenario_container) DOM.scenario_container.style.display = damName.toLowerCase().includes('idukki') ? 'flex' : 'none';
+    if (DOM.mixed_layout_section) DOM.mixed_layout_section.style.display = 'grid';
+    if (DOM.idukki_intelligence_section) DOM.idukki_intelligence_section.style.display = 'grid';
 
-    const mixedLayout = document.getElementById('mixed-layout-section');
-    const idukkiIntel = document.getElementById('idukki-intelligence-section');
-    if (mixedLayout) mixedLayout.style.display = 'grid';
-    if (idukkiIntel) idukkiIntel.style.display = 'grid';
+    if (DOM.ai_context_text_classic) DOM.ai_context_text_classic.innerText = aiContextText;
+    if (DOM.ai_rec_text_classic) DOM.ai_rec_text_classic.innerText = aiRecText;
 
-    // AI Recommendation section
-    const aiCtxEl = document.getElementById('ai-context-text-classic');
-    if (aiCtxEl) aiCtxEl.innerText = aiContextText;
-    const aiRecEl = document.getElementById('ai-rec-text-classic');
-    if (aiRecEl) aiRecEl.innerText = aiRecText;
-
-    const mlBoxEl = document.getElementById('warning-malayalam-classic');
-    if (mlBoxEl) {
-        mlBoxEl.innerHTML = `<strong>ജാഗ്രതാ നിർദ്ദേശം:</strong><br>${mlWarning}<div class="warning-en" style="margin-top:0.5rem;color:inherit;opacity:0.8;">${enWarning}</div>`;
+    if (DOM.warning_malayalam_classic) {
+        DOM.warning_malayalam_classic.innerHTML = `<strong>ജാഗ്രതാ നിർദ്ദേശം:</strong><br>${mlWarning}<div class="warning-en" style="margin-top:0.5rem;color:inherit;opacity:0.8;">${enWarning}</div>`;
         const colors = {
             CRITICAL:['rgba(239,68,68,0.15)','var(--accent-red)','#fca5a5'],
             HIGH:    ['rgba(249,115,22,0.1)', 'var(--accent-orange)','#fdba74'],
             STABLE:  ['rgba(16,185,129,0.1)', 'var(--accent-green)','#6ee7b7']
         };
         const [bg, border, color] = colors[riskLevel];
-        mlBoxEl.style.backgroundColor  = bg;
-        mlBoxEl.style.borderLeftColor  = border;
-        mlBoxEl.style.color            = color;
+        DOM.warning_malayalam_classic.style.backgroundColor  = bg;
+        DOM.warning_malayalam_classic.style.borderLeftColor  = border;
+        DOM.warning_malayalam_classic.style.color            = color;
     }
 
-    const riskListEl = document.getElementById('risk-list-classic');
-    if (riskListEl) riskListEl.innerHTML = riskListHTML;
+    if (DOM.risk_list_classic) DOM.risk_list_classic.innerHTML = riskListHTML;
 
     // Engine panel
-    const engineBadge = document.getElementById('engine-status-badge');
-    if (engineBadge) { engineBadge.innerText = badgeText; engineBadge.style.backgroundColor = badgeColor; }
-    const aiRecEngine = document.getElementById('ai-rec-text');
-    if (aiRecEngine) aiRecEngine.innerText = aiRecText;
+    if (DOM.engine_status_badge) { DOM.engine_status_badge.innerText = badgeText; DOM.engine_status_badge.style.backgroundColor = badgeColor; }
+    if (DOM.ai_rec_text) DOM.ai_rec_text.innerText = aiRecText;
 
     // Release location block
-    const relLocBlock = document.getElementById('release-loc-block');
-    if (relLocBlock) relLocBlock.innerHTML = `
+    if (DOM.release_loc_block) DOM.release_loc_block.innerHTML = `
         <div style="font-weight:600;color:#93c5fd;margin-bottom:0.75rem;display:flex;align-items:center;gap:0.5rem;font-size:0.875rem;text-transform:uppercase;">🌊 RELEASE POINT LOCATION</div>
         <ul style="list-style:none;color:var(--text-primary);font-size:0.875rem;margin-bottom:0.75rem;">
             <li style="margin-bottom:0.35rem;"><span style="color:var(--text-secondary);">Primary Release:</span> <strong>${intel.releasePoint}</strong></li>
@@ -396,28 +396,20 @@ window.selectDam = function(damName) {
         </ul>
         <div style="padding-top:0.75rem;border-top:1px solid rgba(30,58,95,0.4);font-family:'Noto Sans Malayalam',sans-serif;color:#60a5fa;font-size:1rem;">${intel.mlRiver}</div>`;
 
-    const timeEl = document.getElementById('time-overflow-val');
-    if (timeEl) { timeEl.innerText = timeToOverflow; timeEl.style.color = riskLevel==='STABLE'?'var(--text-secondary)':riskLevel==='HIGH'?'#fca5a5':'var(--accent-red)'; }
+    if (DOM.time_overflow_val) { DOM.time_overflow_val.innerText = timeToOverflow; DOM.time_overflow_val.style.color = riskLevel==='STABLE'?'var(--text-secondary)':riskLevel==='HIGH'?'#fca5a5':'var(--accent-red)'; }
+    if (DOM.confidence_val) DOM.confidence_val.innerText = `${75+Math.round(pct*0.2)}% Based on Predictive Models`;
 
-    const confEl = document.getElementById('confidence-val');
-    if (confEl) confEl.innerText = `${75+Math.round(pct*0.2)}% Based on Predictive Models`;
+    if (DOM.comparison_text) DOM.comparison_text.innerText = `Current: ${pct.toFixed(1)}%`;
+    if (DOM.comparison_fill) DOM.comparison_fill.style.width = `${Math.min(100,pct)}%`;
+    if (DOM.comparison_desc) DOM.comparison_desc.innerText = pct>=90?'SURPASSING safe thresholds. Immediate action required.':pct>=80?'Approaching critical levels. Proactive release recommended.':'Well within normal operating range. Continue standard monitoring.';
 
-    const compText = document.getElementById('comparison-text');
-    if (compText) compText.innerText = `Current: ${pct.toFixed(1)}%`;
-    const compFill = document.getElementById('comparison-fill');
-    if (compFill) compFill.style.width = `${Math.min(100,pct)}%`;
-    const compDesc = document.getElementById('comparison-desc');
-    if (compDesc) compDesc.innerText = pct>=90?'SURPASSING safe thresholds. Immediate action required.':pct>=80?'Approaching critical levels. Proactive release recommended.':'Well within normal operating range. Continue standard monitoring.';
+    if (DOM.alert_chips_container) DOM.alert_chips_container.innerHTML = chipsHTML;
 
-    const chipContainer = document.getElementById('alert-chips-container');
-    if (chipContainer) chipContainer.innerHTML = chipsHTML;
-
-    const warnBox = document.getElementById('warning-box-malayalam');
-    if (warnBox) {
-        warnBox.innerText = mlWarning;
-        if (riskLevel==='CRITICAL')     { warnBox.style.backgroundColor='var(--accent-red)'; warnBox.style.color='white'; warnBox.style.fontWeight='700'; }
-        else if (riskLevel==='HIGH')    { warnBox.style.backgroundColor='rgba(239,68,68,0.15)'; warnBox.style.color='#fca5a5'; warnBox.style.fontWeight=''; }
-        else                            { warnBox.style.backgroundColor='rgba(16,185,129,0.1)'; warnBox.style.color='#6ee7b7'; warnBox.style.fontWeight=''; }
+    if (DOM.warning_box_malayalam) {
+        DOM.warning_box_malayalam.innerText = mlWarning;
+        if (riskLevel==='CRITICAL')     { DOM.warning_box_malayalam.style.backgroundColor='var(--accent-red)'; DOM.warning_box_malayalam.style.color='white'; DOM.warning_box_malayalam.style.fontWeight='700'; }
+        else if (riskLevel==='HIGH')    { DOM.warning_box_malayalam.style.backgroundColor='rgba(239,68,68,0.15)'; DOM.warning_box_malayalam.style.color='#fca5a5'; DOM.warning_box_malayalam.style.fontWeight=''; }
+        else                            { DOM.warning_box_malayalam.style.backgroundColor='rgba(16,185,129,0.1)'; DOM.warning_box_malayalam.style.color='#6ee7b7'; DOM.warning_box_malayalam.style.fontWeight=''; }
     }
 
     // Weather update for specific dam
@@ -569,8 +561,16 @@ async function fetchLiveData() {
 }
 
 async function fetchWeather(lat, lon) {
-    const alertTitle = document.querySelector('.alert-text h3');
-    if (alertTitle) alertTitle.innerHTML = '<span class="loading-dots">UPDATING WEATHER</span>';
+    const cacheKey = `${lat.toFixed(2)},${lon.toFixed(2)}`;
+    const now = Date.now();
+    
+    if (weatherCache[cacheKey] && (now - weatherCache[cacheKey].timestamp < WEATHER_CACHE_TTL)) {
+        const cached = weatherCache[cacheKey].data;
+        updateAlertCard(cached.type, cached.precip, cached.temp);
+        return;
+    }
+
+    if (DOM.alertTitle) DOM.alertTitle.innerHTML = '<span class="loading-dots">UPDATING WEATHER</span>';
 
     try {
         const rainRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=precipitation_sum&current_weather=true&timezone=auto&forecast_days=1`);
@@ -581,21 +581,21 @@ async function fetchWeather(lat, lon) {
             
             if (precip !== undefined) {
                 const type = precip > 115 ? 'red' : precip > 64 ? 'orange' : precip > 6.4 ? 'yellow' : 'green';
+                weatherCache[cacheKey] = {
+                    timestamp: now,
+                    data: { type, precip, temp: currentTemp }
+                };
                 updateAlertCard(type, precip, currentTemp);
             }
         }
     } catch(e) { 
         console.warn('Weather fetch failed.', e);
-        if (alertTitle) alertTitle.innerText = 'WEATHER OFFLINE';
+        if (DOM.alertTitle) DOM.alertTitle.innerText = 'WEATHER OFFLINE';
     }
 }
 
 function updateAlertCard(type, precip, temp) {
-    const alertCard  = document.querySelector('.alert-card');
-    const alertIcon  = document.querySelector('.alert-icon');
-    const alertTitle = document.querySelector('.alert-text h3');
-    const alertDesc  = document.querySelector('.alert-text .stat-label');
-    if (!alertCard || !alertIcon || !alertTitle || !alertDesc) return;
+    if (!DOM.alertCard || !DOM.alertIcon || !DOM.alertTitle || !DOM.alertDesc) return;
 
     const cfg = {
         red:    {color:'var(--accent-red)',   bg:'rgba(239,68,68,0.15)',  iconBg:'rgba(239,68,68,0.3)',  title:'RED ALERT',    desc:`Extreme Rainfall: ${precip}mm forecast. Local Temp: ${temp || '--'}°C.`},
@@ -604,13 +604,13 @@ function updateAlertCard(type, precip, temp) {
         green:  {color:'var(--accent-green)', bg:'rgba(16,185,129,0.08)', iconBg:'rgba(16,185,129,0.2)',title:'SAFE',         desc:`Light/No Rainfall: ${precip}mm. Local Temp: ${temp || '--'}°C.`}
     };
     const c = cfg[type] || cfg.green;
-    alertCard.style.borderColor        = c.color;
-    alertCard.style.background         = `linear-gradient(135deg,${c.bg} 0%,var(--card-bg) 100%)`;
-    alertIcon.style.color              = c.color;
-    alertIcon.style.backgroundColor    = c.iconBg;
-    alertTitle.innerHTML               = `<span class="live-blink" style="display:inline-block; width:8px; height:8px; background:${c.color}; border-radius:50%; margin-right:8px;"></span>${c.title}`;
-    alertTitle.style.color             = c.color;
-    alertDesc.innerText                = c.desc;
+    DOM.alertCard.style.borderColor        = c.color;
+    DOM.alertCard.style.background         = `linear-gradient(135deg,${c.bg} 0%,var(--card-bg) 100%)`;
+    DOM.alertIcon.style.color              = c.color;
+    DOM.alertIcon.style.backgroundColor    = c.iconBg;
+    DOM.alertTitle.innerHTML               = `<span class="live-blink" style="display:inline-block; width:8px; height:8px; background:${c.color}; border-radius:50%; margin-right:8px;"></span>${c.title}`;
+    DOM.alertTitle.style.color             = c.color;
+    DOM.alertDesc.innerText                = c.desc;
 }
 
 // ── RENDER ALL DAMS GRID ──────────────────────────────
@@ -655,14 +655,15 @@ function renderAllDamsGrid(damsList) {
     });
 }
 
-// FIX: renamed dam-stats class to match styles.css, removed old dam-card-footer class
+// ── OPTIMIZATION: FRAGMENT RENDERING ──────────────────
 function renderDamsToGrid(dList) {
-    const container = document.getElementById('all-dams-container');
-    if (!container) return;
-    container.innerHTML = '';
+    if (!DOM.all_dams_container) DOM.all_dams_container = document.getElementById('all-dams-container');
+    if (!DOM.all_dams_container) return;
+    
+    DOM.all_dams_container.innerHTML = '';
 
     if (dList.length === 0) {
-        container.innerHTML = `
+        DOM.all_dams_container.innerHTML = `
             <div style="grid-column:1/-1;text-align:center;padding:3rem;color:var(--text-secondary);">
                 <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" style="margin-bottom:1rem;opacity:0.4;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
                 <p>No dams match your search term.</p>
@@ -670,6 +671,7 @@ function renderDamsToGrid(dList) {
         return;
     }
 
+    const fragment = document.createDocumentFragment();
     dList.forEach(d => {
         const badgeClass = d.status==='critical'?'badge-danger':d.status==='warning'?'badge-warning':'badge-safe';
         const barColor   = d.status==='critical'?'var(--accent-red)':d.status==='warning'?'var(--accent-orange)':'var(--accent-green)';
@@ -677,7 +679,6 @@ function renderDamsToGrid(dList) {
 
         const card = document.createElement('div');
         card.className = 'dam-card';
-        // FIX: properly escape single quotes in dam names
         card.setAttribute('onclick', `selectDam('${d.name.replace(/'/g, "\\'")}')`);
         card.innerHTML = `
             <div class="dam-card-header">
@@ -695,8 +696,9 @@ function renderDamsToGrid(dList) {
                 <span>${d.cl.toFixed(1)} / ${d.fl.toFixed(0)} ft</span>
                 <span style="color:var(--accent-blue);font-weight:600;">View Details →</span>
             </div>`;
-        container.appendChild(card);
+        fragment.appendChild(card);
     });
+    DOM.all_dams_container.appendChild(fragment);
 }
 
 // ── ALERT SIMULATOR ───────────────────────────────────
@@ -1003,17 +1005,28 @@ function initBackToTop() {
     btn.onclick = () => window.scrollTo({ top:0, behavior:'smooth' });
 }
 
-// ── SEARCH ────────────────────────────────────────────
+// ── OPTIMIZATION: DEBOUNCED SEARCH ───────────────────
+function debounce(func, timeout = 150) {
+    let timer;
+    return (...args) => {
+        clearTimeout(timer);
+        timer = setTimeout(() => { func.apply(this, args); }, timeout);
+    };
+}
+
 function initSearch() {
-    const input = document.getElementById('dam-search');
-    if (!input) return;
-    input.addEventListener('input', e => {
+    if (!DOM.dam_search) DOM.dam_search = document.getElementById('dam-search');
+    if (!DOM.dam_search) return;
+    
+    const handleSearch = debounce(e => {
         const term = e.target.value.toLowerCase().trim();
         const filtered = term
             ? allParsedDams.filter(d => d.name.toLowerCase().includes(term) || d.district.toLowerCase().includes(term))
             : allParsedDams;
         renderDamsToGrid(filtered);
     });
+
+    DOM.dam_search.addEventListener('input', handleSearch);
 }
 
 // ── UTILITY ───────────────────────────────────────────
@@ -1021,13 +1034,14 @@ const delay = ms => new Promise(r => setTimeout(r, ms));
 
 // ── INIT ──────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
+    cacheDOM();
     startClock();
     initBackToTop();
     initSearch();
 
     // Init gauge with empty state then animate in
     setGauge(0);
-    setTimeout(() => setGauge(84), 100); // animate on load
+    setTimeout(() => setGauge(84), 100);
 
     setScenario('orange');
     updateTrends('Idukki', 'orange');
