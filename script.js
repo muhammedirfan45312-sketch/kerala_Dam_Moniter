@@ -1047,4 +1047,10 @@ document.addEventListener('DOMContentLoaded', () => {
     updateTrends('Idukki', 'orange');
 
     setTimeout(fetchLiveData, 400);
+
+    // ── SYSTEM READY ──
+    setTimeout(() => {
+        document.body.classList.add('loaded');
+        document.body.classList.remove('loading');
+    }, 600);
 });
