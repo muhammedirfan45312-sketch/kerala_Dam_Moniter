@@ -199,6 +199,7 @@
         <div class="logo">
             KDM
             <div class="live-badge"><span class="pulse-dot"></span>LIVE</div>
+        </div>
 
         <div class="lang-switcher">
             <button id="refresh-btn" onclick="refreshData()" style="background:none; border:none; color:var(--text-secondary); cursor:pointer; padding: 0.5rem; transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); display: flex; align-items: center;" aria-label="Refresh Data">
@@ -216,9 +217,9 @@
 
     <div class="summary-bar" id="top-summary-bar">
         <div class="summary-item"><span id="sum-total-label">Total Monitored</span>: <span class="summary-count" id="sum-total">-</span></div>
-        <div class="summary-item" style="color: #fca5a5;"><span id="sum-critical-label">Critical (>90%)</span>: <span class="summary-count" id="sum-critical">-</span></div>
-        <div class="summary-item" style="color: #fdba74;"><span id="sum-warning-label">Warning (>70%)</span>: <span class="summary-count" id="sum-warning">-</span></div>
-        <div class="summary-item" style="color: #6ee7b7;"><span id="sum-safe-label">Safe (<70%)</span>: <span class="summary-count" id="sum-safe">-</span></div>
+        <div class="summary-item" style="color: #fca5a5;"><span id="sum-critical-label">Critical (&gt;90%)</span>: <span class="summary-count" id="sum-critical">-</span></div>
+        <div class="summary-item" style="color: #fdba74;"><span id="sum-warning-label">Warning (&gt;70%)</span>: <span class="summary-count" id="sum-warning">-</span></div>
+        <div class="summary-item" style="color: #6ee7b7;"><span id="sum-safe-label">Safe (&lt;70%)</span>: <span class="summary-count" id="sum-safe">-</span></div>
     </div>
 
     <main style="padding-top: 2rem;">
@@ -481,8 +482,8 @@
                     <p class="stat-label">AI can autonomously Open/Close dam shutters based on real-time risk assessment. <strong>HUMAN APPROVAL MANDATORY.</strong></p>
                     
                     <div class="ai-terminal" id="ai-auto-terminal">
-                        <div class="terminal-line">> AI Autonomous Control System: OFFLINE</div>
-                        <div class="terminal-line">> Awaiting operator initialization...<span class="terminal-cursor">_</span></div>
+                        <div class="terminal-line">&gt; AI Autonomous Control System: OFFLINE</div>
+                        <div class="terminal-line">&gt; Awaiting operator initialization...<span class="terminal-cursor">_</span></div>
                     </div>
 
                     <button id="ai-init-btn" class="ai-action-btn" onclick="initializeAiAutomation()">
