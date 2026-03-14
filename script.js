@@ -12,7 +12,7 @@ let trendsChartInstance = null;
 let currentDamName     = "Idukki";
 let currentScenario    = "orange";
 let currentScenarioType = "orange";
-const keralMap           = null;
+let keralMap           = null;
 let mapMarkers         = [];
 let allParsedDams      = [];
 
