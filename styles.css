@@ -957,3 +957,18 @@ main {
   transform: translateY(-4px);
   box-shadow: 0 8px 20px rgba(0,0,0,0.5);
 }
+
+/* ── LANGUAGE SWITCHER ── */
+.lang-switcher {
+  display: flex; align-items: center; gap: 0.5rem;
+  background: rgba(30,58,95,0.25); border: 1px solid var(--border-color);
+  padding: 0.3rem 0.8rem; border-radius: var(--radius-pill);
+  font-family: var(--font-mono); font-size: 0.75rem; font-weight: 700;
+  transition: all var(--transition-fast);
+}
+.lang-switcher:hover { border-color: var(--accent-blue-lt); }
+
+.lang-btn { cursor: pointer; color: var(--text-secondary); transition: color 0.2s; }
+.lang-btn.active { color: var(--accent-blue-lt); text-shadow: 0 0 10px rgba(59,130,246,0.3); }
+.lang-btn:hover:not(.active) { color: var(--text-primary); }
+.lang-divider { opacity: 0.2; font-weight: 300; }

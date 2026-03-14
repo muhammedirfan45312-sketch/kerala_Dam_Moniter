@@ -40,7 +40,101 @@ function cacheDOM() {
 
 // ── OPTIMIZATION: WEATHER CACHE ──────────────────────
 const weatherCache = {};
-const WEATHER_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+const WEATHER_CACHE_TTL = 5 * 60 * 1000;
+
+// ── LOCALIZATION ────────────────────────────────────
+let currentLang = localStorage.getItem('kdm_lang') || 'en';
+
+const translations = {
+    en: {
+        total_monitored: "Total Monitored",
+        critical: "Critical (>90%)",
+        warning: "Warning (>70%)",
+        safe: "Safe (<70%)",
+        search_placeholder: "Search dams or districts...",
+        capacity_title: "Reservoir Capacity",
+        flow_title: "Current Flow Dynamics",
+        weather_title: "IMD Weather Alert",
+        reports_title: "Live Regional Reports",
+        map_title: "Interactive Kerala Dam Network",
+        all_dams_title: "All Monitored Reservoirs",
+        inflow_rate: "Inflow Rate",
+        current_release: "Current Release",
+        back_to_overview: "← Back to Overview",
+        cumecs: "cumecs",
+        updating_weather: "UPDATING WEATHER"
+    },
+    ml: {
+        total_monitored: "ആകെ",
+        critical: "അതിതീവ്ര ജാഗ്രത (>90%)",
+        warning: "ജാഗ്രതാ നിർദ്ദേശം (>70%)",
+        safe: "സുരക്ഷിതം (<70%)",
+        search_placeholder: "ഡാം അല്ലെങ്കിൽ ജില്ല തിരയുക...",
+        capacity_title: "റിസർവോയർ കപ്പാസിറ്റി",
+        flow_title: "ഒഴുക്കിന്റെ അവസ്ഥ",
+        weather_title: "കാലാവസ്ഥാ മുന്നറിയിപ്പ്",
+        reports_title: "പ്രാദേശിക റിപ്പോർട്ടുകൾ",
+        map_title: "ഡാം ജലനിരപ്പ് ഭൂപടം",
+        all_dams_title: "മറ്റുള്ള ഡാമുകൾ",
+        inflow_rate: "നീരൊഴുക്ക്",
+        current_release: "പുറത്തേക്കുള്ള ഒഴുക്ക്",
+        back_to_overview: "← പഴയ ലിസ്റ്റിലേക്ക്",
+        cumecs: "കുമെക്സ്",
+        updating_weather: "കാലാവസ്ഥ അപ്‌ഡേറ്റ് ചെയ്യുന്നു"
+    }
+};
+
+function updateUILanguage() {
+    const t = translations[currentLang];
+    
+    // Update IDs
+    const idMap = {
+        'sum-total-label': t.total_monitored,
+        'sum-critical-label': t.critical,
+        'sum-warning-label': t.warning,
+        'sum-safe-label': t.safe,
+        'capacity-card-title': t.capacity_title,
+        'flow-card-title': t.flow_title,
+        'weather-card-title': t.weather_title,
+        'reports-card-title': t.reports_title,
+        'map-section-title': t.map_title,
+        'all-dams-section-title': t.all_dams_title,
+        'back-home-btn': t.back_to_overview
+    };
+
+    Object.entries(idMap).forEach(([id, text]) => {
+        const el = document.getElementById(id);
+        if (el) {
+            if (id === 'back-home-btn') {
+                const svg = el.querySelector('svg').outerHTML;
+                el.innerHTML = `${svg} ${text}`;
+            } else {
+                el.innerText = text;
+            }
+        }
+    });
+
+    // Update placeholders
+    if (DOM.dam_search) DOM.dam_search.placeholder = t.search_placeholder;
+
+    // Update dynamic labels
+    document.querySelectorAll('.inflow-label').forEach(el => el.innerText = t.inflow_rate);
+    document.querySelectorAll('.release-label').forEach(el => el.innerText = t.current_release);
+    document.querySelectorAll('.cumecs-unit').forEach(el => el.innerText = t.cumecs);
+
+    // Toggle button active state
+    document.getElementById('lang-en').classList.toggle('active', currentLang === 'en');
+    document.getElementById('lang-ml').classList.toggle('active', currentLang === 'ml');
+
+    // Re-render dam grid to reflect language in search placeholder etc.
+    if (allParsedDams.length > 0) renderDamsToGrid(allParsedDams);
+}
+
+window.setLanguage = function(lang) {
+    currentLang = lang;
+    localStorage.setItem('kdm_lang', lang);
+    updateUILanguage();
+};
 
 const radius       = 110;
 const circumference = Math.PI * radius; // ~345.58
@@ -1035,6 +1129,7 @@ const delay = ms => new Promise(r => setTimeout(r, ms));
 // ── INIT ──────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
     cacheDOM();
+    updateUILanguage();
     startClock();
     initBackToTop();
     initSearch();

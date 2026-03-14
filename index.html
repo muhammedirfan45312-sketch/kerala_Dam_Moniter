@@ -200,6 +200,10 @@
             KDM
             <div class="live-badge"><span class="pulse-dot"></span>LIVE</div>
 
+        <div class="lang-switcher">
+            <span class="lang-btn active" id="lang-en" onclick="setLanguage('en')">EN</span>
+            <span class="lang-divider">|</span>
+            <span class="lang-btn" id="lang-ml" onclick="setLanguage('ml')">ML</span>
         </div>
         <div class="timestamp" id="current-time">
             Last updated: Just now
@@ -207,10 +211,10 @@
     </header>
 
     <div class="summary-bar" id="top-summary-bar">
-        <div class="summary-item">Total Monitored: <span class="summary-count" id="sum-total">-</span></div>
-        <div class="summary-item" style="color: #fca5a5;">Critical (>90%): <span class="summary-count" id="sum-critical">-</span></div>
-        <div class="summary-item" style="color: #fdba74;">Warning (>70%): <span class="summary-count" id="sum-warning">-</span></div>
-        <div class="summary-item" style="color: #6ee7b7;">Safe (<70%): <span class="summary-count" id="sum-safe">-</span></div>
+        <div class="summary-item"><span id="sum-total-label">Total Monitored</span>: <span class="summary-count" id="sum-total">-</span></div>
+        <div class="summary-item" style="color: #fca5a5;"><span id="sum-critical-label">Critical (>90%)</span>: <span class="summary-count" id="sum-critical">-</span></div>
+        <div class="summary-item" style="color: #fdba74;"><span id="sum-warning-label">Warning (>70%)</span>: <span class="summary-count" id="sum-warning">-</span></div>
+        <div class="summary-item" style="color: #6ee7b7;"><span id="sum-safe-label">Safe (<70%)</span>: <span class="summary-count" id="sum-safe">-</span></div>
     </div>
 
     <main style="padding-top: 2rem;">
@@ -247,7 +251,7 @@
         <div class="dashboard-grid">
             <!-- Capacity Card -->
             <div class="card">
-                <div class="card-title">
+                <div class="card-title" id="capacity-card-title">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"></path></svg>
                     Reservoir Capacity
                 </div>
@@ -269,23 +273,23 @@
 
             <!-- Inflow/Outflow Data -->
             <div class="card">
-                <div class="card-title">
+                <div class="card-title" id="flow-card-title">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
                     Current Flow Dynamics
                 </div>
                 <div style="margin-top: 1rem; margin-bottom: 2rem;">
-                    <div class="stat-label" style="margin-bottom: 0.25rem;">Inflow Rate</div>
-                    <div class="stat-value" id="main-dam-inflow">1,200 <span style="font-size: 1.125rem; color: var(--text-secondary); font-weight: normal;">cumecs</span></div>
+                    <div class="stat-label inflow-label" style="margin-bottom: 0.25rem;">Inflow Rate</div>
+                    <div class="stat-value" id="main-dam-inflow">1,200 <span class="cumecs-unit" style="font-size: 1.125rem; color: var(--text-secondary); font-weight: normal;">cumecs</span></div>
                 </div>
                 <div>
-                    <div class="stat-label" style="margin-bottom: 0.25rem;">Current Release</div>
-                    <div class="stat-value" style="color: var(--text-secondary);" id="main-dam-outflow">0 <span style="font-size: 1.125rem; color: var(--text-secondary); font-weight: normal;">cumecs</span></div>
+                    <div class="stat-label release-label" style="margin-bottom: 0.25rem;">Current Release</div>
+                    <div class="stat-value" style="color: var(--text-secondary);" id="main-dam-outflow">0 <span class="cumecs-unit" style="font-size: 1.125rem; color: var(--text-secondary); font-weight: normal;">cumecs</span></div>
                 </div>
             </div>
 
             <!-- IMD Alert -->
             <div class="card alert-card">
-                <div class="card-title">
+                <div class="card-title" id="weather-card-title">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
                     IMD Weather Alert
                 </div>
@@ -302,7 +306,7 @@
 
             <!-- Live Situation Reports -->
              <div class="card news-card">
-                <div class="card-title">
+                <div class="card-title" id="reports-card-title">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
                     Live Regional Reports
                 </div>
@@ -565,9 +569,9 @@
             <div class="all-dams-section" id="all-dams-grid-section" style="margin-top: 0; border-top: none; padding-top: 0;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
                     <div>
-                        <h2 style="font-size: 1.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                        <h2 id="all-dams-section-title" style="font-size: 1.5rem; display: flex; align-items: center; gap: 0.5rem;">
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
-                            All Kerala Dams Overview
+                            All Monitored Reservoirs
                         </h2>
                         <p class="stat-label">Live telemetry sorted by structural risk capacity</p>
                     </div>
@@ -593,7 +597,7 @@
         <div class="map-section">
             <div class="map-section-header">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
-                <h2>Interactive Kerala Dam Network</h2>
+                <h2 id="map-section-title">Interactive Kerala Dam Network</h2>
                 <p>Click any pin to view dam details &nbsp;•&nbsp; Live telemetry</p>
             </div>
             <div id="kerala-map"></div>
