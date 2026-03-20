@@ -456,6 +456,62 @@ header::after {
   font-size: 0.8rem;
   color: var(--text-secondary);
   font-family: var(--font-mono);
+  white-space: nowrap;
+}
+
+/* ── HEADER PILL CONTROL BAR ── */
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: rgba(0, 0, 0, 0.04);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-pill);
+  padding: 0.3rem 0.6rem;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+body.dark .header-controls {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.ctrl-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  transition: background var(--transition-fast), color var(--transition-fast), transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.ctrl-btn:hover {
+  background: rgba(59, 130, 246, 0.1);
+  color: var(--accent-blue);
+}
+
+#refresh-btn:active {
+  transform: rotate(360deg);
+}
+
+.ctrl-sep {
+  width: 1px;
+  height: 18px;
+  background: var(--border-color);
+  margin: 0 0.15rem;
+  flex-shrink: 0;
+}
+
+.lang-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
 }
 
 .live-badge {
