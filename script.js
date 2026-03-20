@@ -465,20 +465,20 @@ function updateTrends(damName, scenario) {
             plugins: {
                 legend: { display: false },
                 tooltip: {
-                    backgroundColor: '#07101f', titleColor: '#60a5fa',
-                    bodyColor: '#e2e8f0', borderColor: '#1e3a5f', borderWidth: 1,
+                    backgroundColor: '#ffffff', titleColor: '#2563eb',
+                    bodyColor: '#0f172a', borderColor: '#cbd5e1', borderWidth: 1,
                     padding: 10, cornerRadius: 8
                 }
             },
             scales: {
                 y: {
                     min: 40, max: 100,
-                    grid: { color: 'rgba(255,255,255,0.04)' },
-                    ticks: { color: '#94a3b8', callback: v => v + '%' }
+                    grid: { color: '#e2e8f0' },
+                    ticks: { color: '#64748b', callback: v => v + '%' }
                 },
                 x: {
                     grid: { display: false },
-                    ticks: { color: '#94a3b8' }
+                    ticks: { color: '#64748b' }
                 }
             }
         }
@@ -632,7 +632,7 @@ function initMap() {
                 maxBounds: keralaBounds, maxBoundsViscosity: 1.0,
                 zoomControl: true, scrollWheelZoom: true
             });
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
                 attribution: '&copy; OpenStreetMap &copy; CARTO', subdomains: 'abcd', maxZoom: 12
             }).addTo(keralMap);
             
