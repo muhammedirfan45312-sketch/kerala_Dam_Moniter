@@ -87,6 +87,9 @@
             <div class="ticker-item">New Pattissery Dam inaugurated in Kanthaloor, Idukki to combat agriculture scarcity</div>
         </div>
     </div>
+
+    <!-- ── STICKY ZONE STARTS HERE ── -->
+    <div class="sticky-zone">
     
     <!-- ╔══════════════════════════════════════╗ -->
     <!-- ║   ALERT NOTIFICATION SIMULATOR       ║ -->
@@ -201,6 +204,13 @@
             <div class="live-badge"><span class="pulse-dot"></span>LIVE</div>
         </div>
 
+        <!-- ── HEADER SEARCH BAR ── -->
+        <div class="header-search-wrapper" id="header-search-wrapper">
+            <svg class="header-search-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <input type="text" id="header-dam-search" class="header-search-input" placeholder="Search dams..." aria-label="Search dams" autocomplete="off">
+            <kbd class="header-search-kbd">⌘K</kbd>
+        </div>
+
         <!-- ── CENTERED CONTROL BAR ── -->
         <div class="header-controls">
             <button id="refresh-btn" class="ctrl-btn" onclick="refreshData()" aria-label="Refresh Data" title="Refresh Data">
@@ -222,12 +232,23 @@
         <div class="timestamp" id="current-time">Last updated: Just now</div>
     </header>
 
+    <!-- ── PLAIN-LANGUAGE ALERT BAR ── -->
+    <div class="plain-alert-bar" id="plain-alert-bar" role="alert" aria-live="polite">
+        <div class="plain-alert-inner">
+            <span class="plain-alert-dot" id="plain-alert-dot"></span>
+            <span class="plain-alert-text" id="plain-alert-text">Loading dam status…</span>
+            <span class="plain-alert-action" id="plain-alert-action"></span>
+        </div>
+    </div>
+
     <div class="summary-bar" id="top-summary-bar">
         <div class="summary-item"><span id="sum-total-label">Total Monitored</span>: <span class="summary-count" id="sum-total">-</span></div>
         <div class="summary-item" style="color: #fca5a5;"><span id="sum-critical-label">Critical (&gt;90%)</span>: <span class="summary-count" id="sum-critical">-</span></div>
         <div class="summary-item" style="color: #fdba74;"><span id="sum-warning-label">Warning (&gt;70%)</span>: <span class="summary-count" id="sum-warning">-</span></div>
         <div class="summary-item" style="color: #6ee7b7;"><span id="sum-safe-label">Safe (&lt;70%)</span>: <span class="summary-count" id="sum-safe">-</span></div>
     </div>
+
+    </div><!-- end sticky-zone -->
 
     <main style="padding-top: 2rem;">
         <!-- MAIN DASHBOARD CONTENT (STAYS ON TOP) -->

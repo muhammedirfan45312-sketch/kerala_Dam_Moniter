@@ -417,24 +417,43 @@ function setGauge(pct) {
     gauge.style.stroke = pct >= 90 ? 'var(--accent-red)' : pct >= 80 ? 'var(--accent-orange)' : 'var(--accent-blue)';
 }
 
-// ── CLOCK ─────────────────────────────────────────────
-function startClock() {
+// ── TIMESTAMP (last successful data fetch, NOT live clock) ───────────────
+function updateFetchTimestamp() {
     const el = document.getElementById('current-time');
     if (!el) return;
-    const tick = () => {
-        const now = new Date();
-        el.innerText = `Last updated: ${now.toLocaleDateString('en-IN', {
-            weekday: 'short', 
-            year: 'numeric', 
-            month: 'short', 
-            day: 'numeric', 
-            hour: '2-digit', 
-            minute: '2-digit', 
-            second: '2-digit'
-        })}`;
-    };
-    tick();
-    setInterval(tick, 1000);
+    const now = new Date();
+    el.innerText = `Data fetched: ${now.toLocaleDateString('en-IN', {
+        weekday: 'short',
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+    })}`;
+    localStorage.setItem('kdm_last_fetch', now.toISOString());
+}
+
+function showOfflineBanner(lastFetchIso) {
+    let banner = document.getElementById('kdm-offline-banner');
+    if (!banner) {
+        banner = document.createElement('div');
+        banner.id = 'kdm-offline-banner';
+        banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99998;background:#b91c1c;color:#fff;text-align:center;padding:0.55rem 1rem;font-size:0.82rem;font-weight:600;letter-spacing:0.02em;display:flex;align-items:center;justify-content:center;gap:0.5rem;';
+        document.body.prepend(banner);
+    }
+    let msg = '⚠️ Live data unavailable — showing cached data.';
+    if (lastFetchIso) {
+        const diff = Math.round((Date.now() - new Date(lastFetchIso)) / 60000);
+        msg = `⚠️ Live feed offline. Showing cached data from ${diff} min ago. Pull to refresh.`;
+    }
+    banner.textContent = msg;
+    banner.style.display = 'flex';
+}
+
+function hideOfflineBanner() {
+    const banner = document.getElementById('kdm-offline-banner');
+    if (banner) banner.style.display = 'none';
 }
 
 // ── TRENDS CHART ──────────────────────────────────────
@@ -761,8 +780,11 @@ function goHome() {
 }
 
 // ── FETCH LIVE DATA ───────────────────────────────────
+const KDM_CACHE_KEY = 'kdm_live_data';
+
 async function fetchLiveData() {
     let usedLiveLevel = false;
+    let fetchedFresh  = false;
 
     try {
         const damRes = await fetch('https://raw.githubusercontent.com/amith-vp/Kerala-Dam-Water-Levels/main/live.json');
@@ -770,6 +792,13 @@ async function fetchLiveData() {
             const payload = await damRes.json();
             const dams = payload.dams;
             window.allDamsData = dams;
+
+            // ── Cache the fresh payload ──
+            try { localStorage.setItem(KDM_CACHE_KEY, JSON.stringify(dams)); } catch(_) {}
+            updateFetchTimestamp();
+            hideOfflineBanner();
+            fetchedFresh = true;
+
             renderAllDamsGrid(dams);
 
             const idukki = dams.find(d => d.name && d.name.toLowerCase().includes('idukki'));
@@ -791,7 +820,6 @@ async function fetchLiveData() {
                     const compFill = document.getElementById('comparison-fill');
                     if (compFill) compFill.style.width = `${pct}%`;
 
-                    // Initial weather fetch for default dam (Idukki)
                     if (idukki.latitude && idukki.longitude) {
                         fetchWeather(idukki.latitude, idukki.longitude);
                     }
@@ -799,13 +827,30 @@ async function fetchLiveData() {
                 }
             }
         }
-    } catch(e) { 
-        console.warn('Dam data fetch failed, using fallback.', e); 
+    } catch(e) {
+        console.warn('Dam data fetch failed, trying cache.', e);
+    }
+
+    // ── Fallback: load from localStorage cache ──
+    if (!fetchedFresh) {
+        const lastFetch = localStorage.getItem('kdm_last_fetch');
+        showOfflineBanner(lastFetch);
+
+        try {
+            const cached = localStorage.getItem(KDM_CACHE_KEY);
+            if (cached) {
+                const dams = JSON.parse(cached);
+                window.allDamsData = dams;
+                renderAllDamsGrid(dams);
+                usedLiveLevel = true;
+                console.info('KDM: Loaded from localStorage cache.');
+            }
+        } catch(_) {}
     }
 
     if (!usedLiveLevel) {
-        setScenario('orange'); 
-        fetchWeather(9.85, 77.1); // Fallback Idukki coordinates
+        setScenario('orange');
+        fetchWeather(9.85, 77.1);
     }
 }
 
@@ -905,6 +950,32 @@ function renderAllDamsGrid(damsList) {
     if (sumCrit)  sumCrit.innerText  = metrics.critical;
     if (sumWarn)  sumWarn.innerText  = metrics.warning;
     if (sumSafe)  sumSafe.innerText  = metrics.safe;
+
+    // Update plain-language alert bar
+    const alertText = document.getElementById('plain-alert-text');
+    const alertDot  = document.getElementById('plain-alert-dot');
+    if (alertText && alertDot) {
+        const idukki = parsedDams.find(d => d.name.toLowerCase().includes('idukki'));
+        let idukkiStr = '';
+        if (idukki) {
+            const levelStr = idukki.status === 'critical' ? 'Red Alert' : (idukki.status === 'warning' ? 'Orange Alert' : 'Safe Level');
+            idukkiStr = `Idukki Reservoir is ${idukki.pct}% full — ${levelStr}. `;
+        }
+        
+        if (metrics.critical > 0) {
+            alertText.innerText = `${idukkiStr}${metrics.critical} critical dams being monitored. Extreme caution advised.`;
+            alertDot.style.background = 'var(--accent-red)';
+            alertDot.style.animation = 'pulseDot 1.5s infinite';
+        } else if (metrics.warning > 0) {
+            alertText.innerText = `${idukkiStr}${metrics.warning} dams at warning levels (>70%). Please monitor closely.`;
+            alertDot.style.background = 'var(--accent-orange)';
+            alertDot.style.animation = 'none';
+        } else {
+            alertText.innerText = `${idukkiStr}All ${metrics.total} monitored dams are within safe operating levels.`;
+            alertDot.style.background = 'var(--accent-green)';
+            alertDot.style.animation = 'none';
+        }
+    }
 
     initMap();
     updateMapMarkers(damsList);
@@ -1270,18 +1341,55 @@ function debounce(func, timeout = 150) {
 }
 
 function initSearch() {
-    if (!DOM.dam_search) DOM.dam_search = document.getElementById('dam-search');
-    if (!DOM.dam_search) return;
-    
+    // ── Wire both search inputs to the same debounced filter ──
     const handleSearch = debounce(e => {
         const term = e.target.value.toLowerCase().trim();
+
+        // Mirror value to the other search box for consistency
+        const otherSearch = e.target.id === 'dam-search'
+            ? document.getElementById('header-dam-search')
+            : document.getElementById('dam-search');
+        if (otherSearch && otherSearch.value !== e.target.value) {
+            otherSearch.value = e.target.value;
+        }
+
+        // If we are in the detail view, switch to All Dams view first
+        const allView    = document.getElementById('all-dams-view');
+        const detailView = document.getElementById('dam-detail-view');
+        if (term && allView && allView.style.display === 'none') {
+            if (detailView) detailView.style.display = 'none';
+            allView.style.display = 'block';
+            allView.style.opacity = '1';
+            const backBtn = document.getElementById('back-home-btn');
+            if (backBtn) backBtn.style.display = 'none';
+        }
+
         const filtered = term
             ? allParsedDams.filter(d => d.name.toLowerCase().includes(term) || d.district.toLowerCase().includes(term))
             : allParsedDams;
         renderDamsToGrid(filtered);
     });
 
-    DOM.dam_search.addEventListener('input', handleSearch);
+    // Attach to the inline All-Dams search
+    const inlineSearch = document.getElementById('dam-search');
+    if (inlineSearch) {
+        DOM.dam_search = inlineSearch;
+        inlineSearch.addEventListener('input', handleSearch);
+    }
+
+    // Attach to the sticky header search
+    const headerSearch = document.getElementById('header-dam-search');
+    if (headerSearch) {
+        headerSearch.addEventListener('input', handleSearch);
+        // Keyboard shortcut: Cmd/Ctrl+K focuses header search
+        document.addEventListener('keydown', ev => {
+            if ((ev.metaKey || ev.ctrlKey) && ev.key === 'k') {
+                ev.preventDefault();
+                headerSearch.focus();
+                headerSearch.select();
+            }
+        });
+    }
 }
 
 // ── UTILITY ───────────────────────────────────────────
@@ -1299,10 +1407,13 @@ document.addEventListener('DOMContentLoaded', () => {
     cacheDOM();
     initDarkMode();
     updateUILanguage();
-    startClock();
     initBackToTop();
     initSearch();
     initMap();
+
+    // Show placeholder timestamp until first fetch completes
+    const timeEl = document.getElementById('current-time');
+    if (timeEl) timeEl.innerText = 'Fetching live data…';
 
     // Init gauge with empty state then animate in
     setGauge(0);
@@ -1313,8 +1424,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     setTimeout(fetchLiveData, 400);
     setTimeout(fetchNews, 800);
-    setInterval(fetchNews, 2 * 60 * 1000); // Auto-refresh news every 2 mins
-    setInterval(fetchLiveData, 5 * 60 * 1000); // Auto-refresh data every 5 mins
+    setInterval(fetchNews, 2 * 60 * 1000);
+    setInterval(fetchLiveData, 5 * 60 * 1000);
 
     // ── SYSTEM READY ──
     setTimeout(() => {
