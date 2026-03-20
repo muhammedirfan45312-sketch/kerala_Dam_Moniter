@@ -39,6 +39,27 @@ function cacheDOM() {
     DOM.alertDesc = document.querySelector('.alert-text .stat-label');
 }
 
+// ── DARK MODE ────────────────────────────────────────
+window.toggleDarkMode = function() {
+    const isDark = document.body.classList.toggle('dark');
+    localStorage.setItem('kdm_dark', isDark ? '1' : '0');
+    const moon = document.getElementById('theme-icon-moon');
+    const sun  = document.getElementById('theme-icon-sun');
+    if (moon) moon.style.display = isDark ? 'none'  : 'block';
+    if (sun)  sun.style.display  = isDark ? 'block' : 'none';
+};
+
+function initDarkMode() {
+    const saved = localStorage.getItem('kdm_dark');
+    if (saved === '1') {
+        document.body.classList.add('dark');
+        const moon = document.getElementById('theme-icon-moon');
+        const sun  = document.getElementById('theme-icon-sun');
+        if (moon) moon.style.display = 'none';
+        if (sun)  sun.style.display  = 'block';
+    }
+}
+
 // ── OPTIMIZATION: WEATHER CACHE ──────────────────────
 const weatherCache = {};
 const WEATHER_CACHE_TTL = 5 * 60 * 1000;
@@ -1276,6 +1297,7 @@ window.refreshData = async function() {
 // ── INIT ──────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
     cacheDOM();
+    initDarkMode();
     updateUILanguage();
     startClock();
     initBackToTop();
